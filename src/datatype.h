@@ -296,6 +296,7 @@ class IpcBridgeInterface : public Trait::Base
     using Trait::Base::Base;
 
     typename Trait::template Event<MapApiLanesStamped> map_api_lanes_stamped_{*this, "map_api_lanes_stamped"};
+
 };
 
 using IpcBridgeProxy = AsProxy<IpcBridgeInterface>;
