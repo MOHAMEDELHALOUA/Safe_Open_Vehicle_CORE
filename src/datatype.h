@@ -15,6 +15,7 @@
 #define SCORE_IPC_BRIDGE_DATATYPE_H
 
 #include "score/mw/com/types.h"
+#include <string>
 
 namespace score::mw::com
 {
@@ -287,6 +288,7 @@ struct MapApiLanesStamped
 
     std::uint32_t x;
     std::size_t hash_value;
+    char sync_msg[16];
 };
 
 template <typename Trait>

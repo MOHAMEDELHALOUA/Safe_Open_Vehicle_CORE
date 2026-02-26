@@ -110,6 +110,7 @@ go_sdk.download(
     goos = "windows",
     version = "1.23.5",
 )
+
 go_sdk.download(
     name = "go_darwin_amd64",
     goarch = "amd64",

@@ -19,6 +19,8 @@
 #include "score/concurrency/notification.h"
 
 #include "score/mw/com/impl/proxy_event.h"
+#include <chrono>
+#include <codecvt>
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <score/optional.hpp>
@@ -241,7 +243,8 @@ score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& 
 }
 
 Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(IpcBridgeSkeleton& skeleton,
-                                                                    const std::size_t cycle)
+                                                                    const std::size_t cycle,
+                                                                    const char sync_msg[16])
 {
     const std::default_random_engine::result_type seed{static_cast<std::default_random_engine::result_type>(
         std::chrono::steady_clock::now().time_since_epoch().count())};
@@ -255,7 +258,7 @@ Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(IpcBridgeSke
     auto sample = std::move(sample_result).value();
     sample->hash_value = START_HASH;
     sample->x = static_cast<std::uint32_t>(cycle);
-
+    sample->sync_msg = sync_msg;
     std::cout << ToString("Sending sample: ", sample->x, "\n");
     for (MapApiLaneData& lane : sample->lanes)
     {
@@ -421,24 +424,55 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         std::cerr << "Unable to offer service for skeleton: " << offer_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
-    std::cout << "Starting to send data\n";
 
+    // ── PHASE 1: Send SYNC ──────────────────────────────────────────────
+    std::cout << "Sending SYNC...\n";
+    auto sync_sample = PrepareMapLaneSample(skeleton, 0U, "SYNC");
+
+    if (!sync_sample.has_value()) { return EXIT_FAILURE; }
+    {
+        std::lock_guard lock{event_sending_mutex_};
+        skeleton.map_api_lanes_stamped_.Send(std::move(sync_sample).value());
+    }
+
+    // Wait a moment to give the proxy time to receive SYNC and get ready
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    // ── PHASE 2: Send SYNC_ACK to signal "data is coming now" ──────────
+    std::cout << "Sending SYNC_ACK...\n";
+    auto sync_ack_sample = PrepareMapLaneSample(skeleton, 0U, "SYNC_ACK");
+    if (!sync_ack_sample.has_value()) { return EXIT_FAILURE; }
+    {
+        std::lock_guard lock{event_sending_mutex_};
+        skeleton.map_api_lanes_stamped_.Send(std::move(sync_ack_sample).value());
+    }
+
+    // ── PHASE 3: Send actual data ───────────────────────────────────────
+
+    std::cout << "Starting to send data\n";
     for (std::size_t cycle = 0U; cycle < num_cycles || num_cycles == 0U; ++cycle)
     {
-        auto sample_result = PrepareMapLaneSample(skeleton, cycle);
+        auto sample_result = PrepareMapLaneSample(skeleton, cycle, "Data");  // Data = real data
         if (!sample_result.has_value())
         {
-            std::cerr << "No sample received. Exiting.\n";
+            std::cerr << "Sample allocation failed. Exiting.\n";
             return EXIT_FAILURE;
         }
-        auto sample = std::move(sample_result).value();
-
         {
             std::lock_guard lock{event_sending_mutex_};
-            skeleton.map_api_lanes_stamped_.Send(std::move(sample));
+            skeleton.map_api_lanes_stamped_.Send(std::move(sample_result).value());
             event_published_ = true;
         }
         std::this_thread::sleep_for(cycle_time);
+    }
+
+    // ── PHASE 4: Send END ───────────────────────────────────────────────
+    std::cout << "Sending END...\n";
+    auto end_sample = PrepareMapLaneSample(skeleton, 0U, "END");
+    if (!end_sample.has_value()) { return EXIT_FAILURE; }
+    {
+        std::lock_guard lock{event_sending_mutex_};
+        skeleton.map_api_lanes_stamped_.Send(std::move(end_sample).value());
     }
 
     std::cout << "Stop offering service...";
