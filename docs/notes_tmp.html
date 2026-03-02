@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>notes.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="how-to-customize-the-program-to-exchange-custom-data">How to customize the program to exchange custom data</h1>
+<h2 id="1include-the-data-type">1.Include the data type</h2>
+<p>Include the data type to the existing struct on the datatype.h file or create custom struct in the same file</p>
+<pre class="hljs"><code><div>i
+</div></code></pre>
+<h2 id="how-sync-messages-are-received">How sync messages are received ?</h2>
+<pre class="hljs"><code><div>Skeleton sends &quot;SYNC&quot;
+        ↓
+Shared memory buffer (middleware stores it)
+        ↓
+GetNewSamples() finds it in the buffer
+        ↓
+Calls the lambda once with a SamplePtr pointing to it
+        ↓
+lambda calls GetSamplePtrValue(sample.get())
+        ↓
+Gets a MapApiLanesStamped&amp; where sync_msg = &quot;SYNC&quot;
+        ↓
+lambda calls receiver.ReceiveSample(sample_value)
+        ↓
+ReceiveSample() checks: strcmp(sync_msg, &quot;SYNC&quot;) == 0  ✓
+        ↓
+Sets current_phase_ = Phase::Syncing
+Increments control_msgs_received_
+Returns (no data counted)
+        ↓
+Back in the loop: real_data_received = 0
+cycle does NOT advance
+</div></code></pre>
+<hr>
+<h1 id="bidirectional-communication">Bidirectional communication</h1>
+<h2 id="the-core-problem">The Core Problem</h2>
+<p>Right now communication is one-way:</p>
+<pre class="hljs"><code><div>Skeleton ──── data ────&gt; Proxy
+</div></code></pre>
+<p>We want:</p>
+<pre class="hljs"><code><div>Skeleton ──── data ────&gt; Proxy
+Skeleton &lt;─── ACK  ──── Proxy
+</div></code></pre>
+<p>But the current S-CORE setup only has one channel, and it only flows one way — the skeleton sends, the proxy receives. The proxy has no way to send anything back.</p>
+<h2 id="solution--two-channels">Solution : Two Channels</h2>
+<p>Create a second independent service that goes in the opposite direction. The proxy becomes a skeleton for this second channel, and the original skeleton becomes a proxy for it.</p>
+<pre class="hljs"><code><div>Channel 1:  Original Skeleton ──── data/SYNC ────&gt; Original Proxy
+Channel 2:  Original Skeleton &lt;─── ACK       ──── Original Proxy
+                                                   (acts as skeleton
+                                                    on channel 2)
+</div></code></pre>
+<p>Each process runs both roles at the same time:</p>
+<pre class="hljs"><code><div>Process A (sender):         |     Process B (receiver):
+  - Skeleton on channel 1   |       - Proxy on channel 1
+  - Proxy on channel 2      |       - Skeleton on channel 2
+</div></code></pre>
+<p><strong>Why this is recommended</strong>: It fits naturally into the S-CORE model.</p>
+<p>But we will need to define a second data type and service in datatype.h.</p>
+<h3 id="how-approach-1-works-in-practice">How Approach 1 Works in Practice</h3>
+<ol>
+<li>Step 1 — Define the ACK data type in <code>datatype.h</code>
+Add a simple struct just for acknowledgements:</li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">AckMessage</span>
+{</span>
+    <span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span> ack_for_cycle;  <span class="hljs-comment">// which cycle are we ACKing?</span>
+    <span class="hljs-keyword">char</span>          status[<span class="hljs-number">16</span>];     <span class="hljs-comment">// "ACK", "NACK", etc.</span>
+};
+</div></code></pre>
+<p>And define a second interface for it, just like <code>IpcBridgeInterface</code> but reversed:</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">template</span> &lt;<span class="hljs-keyword">typename</span> Trait&gt;
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AckBridgeInterface</span> :</span> <span class="hljs-keyword">public</span> Trait::Base
+{
+  <span class="hljs-keyword">public</span>:
+    <span class="hljs-keyword">using</span> Trait::Base::Base;
+    <span class="hljs-keyword">typename</span> Trait::<span class="hljs-keyword">template</span> Event&lt;AckMessage&gt; ack_event_{*<span class="hljs-keyword">this</span>, <span class="hljs-string">"ack_event"</span>};
+};
+
+<span class="hljs-keyword">using</span> AckBridgeProxy    = AsProxy&lt;AckBridgeInterface&gt;;
+<span class="hljs-keyword">using</span> AckBridgeSkeleton = AsSkeleton&lt;AckBridgeInterface&gt;;
+</div></code></pre>
+<ol start="2">
+<li>Step 2 — The sender process runs both roles</li>
+</ol>
+<pre class="hljs"><code><div>Process A (original sender):
+  ├── IpcBridgeSkeleton  → sends data on channel 1
+  └── AckBridgeProxy     → listens for ACK on channel 2
+</div></code></pre>
+<ol start="3">
+<li>Step 3 — The receiver process also runs both roles</li>
+</ol>
+<pre class="hljs"><code><div>Process B (original receiver):
+  ├── IpcBridgeProxy     → receives data on channel 1
+  └── AckBridgeSkeleton  → sends ACK on channel 2
+</div></code></pre>
+<ol start="4">
+<li>Step 4 — The new flow</li>
+</ol>
+<pre class="hljs"><code><div>Process A                          Process B
+─────────                          ─────────
+Send data (cycle=0)
+                                   Receive data (cycle=0)
+                                   Send ACK (ack_for_cycle=0)
+Receive ACK (cycle=0)
+Send data (cycle=1)
+                                   Receive data (cycle=1)
+                                   Send ACK (ack_for_cycle=1)
+Receive ACK (cycle=1)
+...
+</div></code></pre>
+<h3 id="the-overall-plan">The Overall Plan</h3>
+<pre class="hljs"><code><div>Step 1 →  datatype.h          → Add `AckMessage` struct + `AckBridgeInterface` + `AckBridgeProxy` + `AckBridgeSkeleton`
+Step 2 →   sample_sender_receiver.h  → add ACK members to the class
+Step 3 →   sample_sender_receiver.cpp → RunAsSkeleton waits for ACK
+                                      → RunAsProxy sends ACK
+Step 4 →   manifest/config file      → register the second channel
+</div></code></pre>
+<h3 id="what-files-we-need-to-touch-and-how">What Files we need to Touch and How</h3>
+<p><img src="file:///workspaces/score_scrample/docs/imgs/files_to_touch.png" alt=""></p>
+<ol>
+<li><strong>Add Ack-related memebers to 'EventSenderReceiver' class</strong></li>
+</ol>
+<p>This file is the blueprint of the EventSenderReceiver class. Right now it only knows about the data channel. We need to tell it that it also manages the ACK channel.
+Here is what the class looks like now conceptually:</p>
+<pre class="hljs"><code><div>EventSenderReceiver
+├── RunAsSkeleton()   → sends data
+├── RunAsProxy()      → receives data
+├── event_sending_mutex_
+├── event_published_
+├── map_lanes_mutex_
+└── map_lanes_list_
+</div></code></pre>
+<p>We need to add two new private members — one to hold received ACKs, and one to signal between threads when an ACK arrives:</p>
+<pre class="hljs"><code><div><span class="hljs-meta">#<span class="hljs-meta-keyword">ifndef</span> SCORE_MW_COM_IPC_BRIDGE_SAMPLE_SENDER_RECEIVER_H</span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> SCORE_MW_COM_IPC_BRIDGE_SAMPLE_SENDER_RECEIVER_H</span>
+
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">"datatype.h"</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;score/optional.hpp&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;atomic&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;chrono&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;mutex&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;random&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;vector&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;condition_variable&gt;    // NEW: needed to wake skeleton when ACK arrives</span></span>
+
+<span class="hljs-keyword">namespace</span> score::mw::com
+{
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">EventSenderReceiver</span>
+{</span>
+  <span class="hljs-keyword">public</span>:
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">RunAsSkeleton</span><span class="hljs-params">(<span class="hljs-keyword">const</span> score::mw::com::InstanceSpecifier&amp; instance_specifier,
+                      <span class="hljs-keyword">const</span> <span class="hljs-built_in">std</span>::chrono::milliseconds cycle_time,
+                      <span class="hljs-keyword">const</span> <span class="hljs-built_in">std</span>::<span class="hljs-keyword">size_t</span> num_cycles)</span></span>;
+
+    <span class="hljs-keyword">template</span> &lt;<span class="hljs-keyword">typename</span> ProxyType = score::mw::com::IpcBridgeProxy,
+              <span class="hljs-keyword">typename</span> ProxyEventType = score::mw::com::impl::ProxyEvent&lt;MapApiLanesStamped&gt;&gt;
+    <span class="hljs-keyword">int</span> RunAsProxy(<span class="hljs-keyword">const</span> score::mw::com::InstanceSpecifier&amp; instance_specifier,
+                   <span class="hljs-keyword">const</span> score::cpp::optional&lt;<span class="hljs-built_in">std</span>::chrono::milliseconds&gt; cycle_time,
+                   <span class="hljs-keyword">const</span> <span class="hljs-built_in">std</span>::<span class="hljs-keyword">size_t</span> num_cycles,
+                   <span class="hljs-keyword">bool</span> try_writing_to_data_segment = <span class="hljs-literal">false</span>,
+                   <span class="hljs-keyword">bool</span> check_sample_hash = <span class="hljs-literal">true</span>);
+
+  <span class="hljs-keyword">private</span>:
+    <span class="hljs-comment">// ── Existing members (data channel) ─────────────────────────────────────</span>
+    <span class="hljs-built_in">std</span>::mutex event_sending_mutex_{};
+    <span class="hljs-built_in">std</span>::atomic&lt;<span class="hljs-keyword">bool</span>&gt; event_published_{<span class="hljs-literal">false</span>};
+    <span class="hljs-built_in">std</span>::mutex map_lanes_mutex_{};
+    <span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;SamplePtr&lt;MapApiLanesStamped&gt;&gt; map_lanes_list_{};
+
+    <span class="hljs-comment">// ── NEW: ACK channel members ─────────────────────────────────────────────</span>
+
+    <span class="hljs-comment">// Stores the cycle number of the last ACK received from the proxy.</span>
+    <span class="hljs-comment">// optional means "no ACK received yet" when empty.</span>
+    score::cpp::optional&lt;<span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span>&gt; last_ack_cycle_{};
+
+    <span class="hljs-comment">// Mutex protecting last_ack_cycle_ (two threads may touch it:</span>
+    <span class="hljs-comment">// the ACK-listening thread writes it, RunAsSkeleton reads it).</span>
+    <span class="hljs-built_in">std</span>::mutex ack_mutex_{};
+
+    <span class="hljs-comment">// Condition variable: lets RunAsSkeleton SLEEP until an ACK arrives,</span>
+    <span class="hljs-comment">// instead of spinning in a busy loop checking last_ack_cycle_ constantly.</span>
+    <span class="hljs-built_in">std</span>::condition_variable ack_received_cv_{};
+};
+
+}  <span class="hljs-comment">// namespace score::mw::com</span>
+
+<span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span>
+</div></code></pre>
+<p><em><strong>Difference between using conditional_variables and not using them</strong></em></p>
+<p>Without it, the skeleton would have to do this to wait for an ACK:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// BAD — busy loop, wastes CPU</span>
+<span class="hljs-keyword">while</span> (!last_ack_cycle_.has_value()) { <span class="hljs-comment">/* keep checking */</span> }
+</div></code></pre>
+<p>With <code>condition_variable</code>, the skeleton thread goes to sleep and the OS wakes it up the moment an ACK arrives — zero CPU wasted:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// GOOD — sleep until notified</span>
+<span class="hljs-built_in">std</span>::unique_lock lock{ack_mutex_};
+ack_received_cv_.wait(lock, [&amp;]{ <span class="hljs-keyword">return</span> last_ack_cycle_.has_value(); });
+</div></code></pre>
+<ol start="2">
+<li>Update the sample_sender_receiver.cpp for <code>RunAsSkeleton</code> to wait for ACK, and for <code>RunAsProxy</code> to send ACK</li>
+</ol>
+<p>The skeleton currently does this:</p>
+<pre class="hljs"><code><div>send data → sleep → send data → sleep → ...
+</div></code></pre>
+<p>We want:</p>
+<pre class="hljs"><code><div>send data → wait for ACK → send data → wait for ACK → ...
+</div></code></pre>
+<p>Here is the updated loop inside <code>RunAsSkeleton</code>, with the ACK-waiting logic added. Only the data-sending loop changes — SYNC/SYNC_ACK/END phases stay the same:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// ── PHASE 3: Send actual data, wait for ACK after each ──────────────────</span>
+<span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Starting to send data\n"</span>;
+<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-keyword">size_t</span> cycle = <span class="hljs-number">0U</span>; cycle &lt; num_cycles || num_cycles == <span class="hljs-number">0U</span>; ++cycle)
+{
+    <span class="hljs-comment">// ── Send one data sample ─────────────────────────────────────────────</span>
+    <span class="hljs-keyword">auto</span> sample_result = PrepareMapLaneSample(skeleton, cycle, <span class="hljs-string">""</span>);
+    <span class="hljs-keyword">if</span> (!sample_result.has_value())
+    {
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cerr</span> &lt;&lt; <span class="hljs-string">"Sample allocation failed. Exiting.\n"</span>;
+        <span class="hljs-keyword">return</span> EXIT_FAILURE;
+    }
+    {
+        <span class="hljs-built_in">std</span>::lock_guard lock{event_sending_mutex_};
+        skeleton.map_api_lanes_stamped_.Send(<span class="hljs-built_in">std</span>::move(sample_result).value());
+        event_published_ = <span class="hljs-literal">true</span>;
+    }
+    <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Sent cycle "</span> &lt;&lt; cycle &lt;&lt; <span class="hljs-string">", waiting for ACK...\n"</span>;
+
+    <span class="hljs-comment">// ── Wait for ACK from the proxy ──────────────────────────────────────</span>
+    <span class="hljs-comment">// We sleep here until the ACK-listening thread wakes us up.</span>
+    <span class="hljs-comment">// The timeout (5 seconds) prevents waiting forever if proxy crashes.</span>
+    {
+        <span class="hljs-built_in">std</span>::unique_lock lock{ack_mutex_};
+
+        <span class="hljs-keyword">const</span> <span class="hljs-keyword">bool</span> ack_arrived = ack_received_cv_.wait_for(
+            lock,
+            <span class="hljs-built_in">std</span>::chrono::seconds(<span class="hljs-number">5</span>),          <span class="hljs-comment">// timeout: give up after 5s</span>
+            [<span class="hljs-keyword">this</span>, cycle] {
+                <span class="hljs-comment">// Wake up condition: last_ack_cycle_ must match current cycle</span>
+                <span class="hljs-keyword">return</span> last_ack_cycle_.has_value() &amp;&amp;
+                       last_ack_cycle_.value() == <span class="hljs-keyword">static_cast</span>&lt;<span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span>&gt;(cycle);
+            });
+
+        <span class="hljs-keyword">if</span> (!ack_arrived)
+        {
+            <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cerr</span> &lt;&lt; <span class="hljs-string">"Timeout: no ACK received for cycle "</span> &lt;&lt; cycle &lt;&lt; <span class="hljs-string">", terminating.\n"</span>;
+            <span class="hljs-keyword">return</span> EXIT_FAILURE;
+        }
+
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"ACK received for cycle "</span> &lt;&lt; cycle &lt;&lt; <span class="hljs-string">", proceeding.\n"</span>;
+    }
+
+    <span class="hljs-comment">// Only sleep between cycles if desired — now we're ACK-gated not time-gated</span>
+    <span class="hljs-built_in">std</span>::this_thread::sleep_for(cycle_time);
+}
+</div></code></pre>
+<p>Part B — RunAsProxy: send ACK after receiving data, and run the ACK skeleton in a background thread</p>
+<p>This is the most important architectural point. The proxy needs to do two things at the same time:</p>
+<pre><code>-Keep receiving data on channel 1 (existing loop)
+-Send ACKs on channel 2 (new)
+</code></pre>
+<p>The cleanest way to do this at your level is to run the ACK skeleton in a separate thread that the proxy starts before its main loop. The thread just listens for a signal, then sends an ACK.</p>
+<p>Here's how you add this to <code>RunAsProxy</code>, right before the main receive loop:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// ── Start the ACK skeleton in a background thread ────────────────────────</span>
+<span class="hljs-comment">// This thread runs alongside the main receive loop.</span>
+<span class="hljs-comment">// When the main loop receives a data sample, it signals this thread</span>
+<span class="hljs-comment">// to send an ACK back to the skeleton.</span>
+
+<span class="hljs-comment">// These variables are shared between the main loop and the ACK thread:</span>
+<span class="hljs-built_in">std</span>::mutex           ack_send_mutex{};
+<span class="hljs-built_in">std</span>::condition_variable ack_send_cv{};
+<span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span>        cycle_to_ack{<span class="hljs-number">0U</span>};
+<span class="hljs-keyword">bool</span>                 ack_requested{<span class="hljs-literal">false</span>};
+<span class="hljs-keyword">bool</span>                 ack_thread_should_stop{<span class="hljs-literal">false</span>};
+
+<span class="hljs-comment">// The ACK-sending thread:</span>
+<span class="hljs-function"><span class="hljs-built_in">std</span>::thread <span class="hljs-title">ack_thread</span><span class="hljs-params">([&amp;]()
+{
+    <span class="hljs-comment">// Create the ACK skeleton (proxy sends ACK, so it needs a skeleton here)</span>
+    <span class="hljs-keyword">const</span> <span class="hljs-keyword">auto</span> ack_instance_result =
+        score::mw::com::InstanceSpecifier::Create(<span class="hljs-string">"score/AckMessage"</span>);
+    <span class="hljs-keyword">if</span> (!ack_instance_result.has_value())
+    {
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cerr</span> &lt;&lt; <span class="hljs-string">"ACK: invalid instance specifier\n"</span>;
+        <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">auto</span> ack_skeleton_result = AckBridgeSkeleton::Create(ack_instance_result.value());
+    <span class="hljs-keyword">if</span> (!ack_skeleton_result.has_value())
+    {
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cerr</span> &lt;&lt; <span class="hljs-string">"ACK: could not create skeleton: "</span> &lt;&lt; ack_skeleton_result.error() &lt;&lt; <span class="hljs-string">"\n"</span>;
+        <span class="hljs-keyword">return</span>;
+    }
+    <span class="hljs-keyword">auto</span>&amp; ack_skeleton = ack_skeleton_result.value();
+    ack_skeleton.OfferService();
+
+    <span class="hljs-comment">// Loop: wait for a signal, then send ACK</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)
+    {
+        <span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span> cycle_num{<span class="hljs-number">0U</span>};
+        {
+            <span class="hljs-built_in">std</span>::unique_lock lock{ack_send_mutex};
+            <span class="hljs-comment">// Sleep until main loop signals us or tells us to stop</span>
+            ack_send_cv.wait(lock, [&amp;]{
+                <span class="hljs-keyword">return</span> ack_requested || ack_thread_should_stop;
+            });
+
+            <span class="hljs-keyword">if</span> (ack_thread_should_stop) { <span class="hljs-keyword">break</span>; }
+
+            cycle_num = cycle_to_ack;
+            ack_requested = <span class="hljs-literal">false</span>;   <span class="hljs-comment">// reset for next cycle</span>
+        }
+
+        <span class="hljs-comment">// Build and send the ACK sample</span>
+        <span class="hljs-keyword">auto</span> ack_sample_result = ack_skeleton.ack_event_.Allocate();
+        <span class="hljs-keyword">if</span> (!ack_sample_result.has_value()) { <span class="hljs-keyword">continue</span>; }
+
+        <span class="hljs-keyword">auto</span> ack_sample = <span class="hljs-built_in">std</span>::move(ack_sample_result).value();
+        ack_sample-&gt;ack_for_cycle = cycle_num;
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">strncpy</span>(ack_sample-&gt;status, <span class="hljs-string">"ACK"</span>, <span class="hljs-number">15</span>);
+        ack_sample-&gt;status[<span class="hljs-number">15</span>] = <span class="hljs-string">'\0'</span>;
+
+        ack_skeleton.ack_event_.Send(<span class="hljs-built_in">std</span>::move(ack_sample));
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Sent ACK for cycle "</span> &lt;&lt; cycle_num &lt;&lt; <span class="hljs-string">"\n"</span>;
+    }
+
+    ack_skeleton.StopOfferService();
+})</span></span>;
+</div></code></pre>
+<p>Then in the main receive loop, after a real data sample is received, signal the ACK thread:</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">const</span> <span class="hljs-keyword">auto</span> real_data_received = receiver.GetReceivedSampleCount() - received_before;
+<span class="hljs-keyword">if</span> (real_data_received &gt;= <span class="hljs-number">1U</span>)
+{
+    <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; ToString(instance_specifier, <span class="hljs-string">": Proxy received valid data\n"</span>);
+
+    <span class="hljs-comment">// Signal the ACK thread to send ACK for this cycle</span>
+    {
+        <span class="hljs-built_in">std</span>::lock_guard lock{ack_send_mutex};
+        cycle_to_ack  = <span class="hljs-keyword">static_cast</span>&lt;<span class="hljs-built_in">std</span>::<span class="hljs-keyword">uint32_t</span>&gt;(cycle);
+        ack_requested = <span class="hljs-literal">true</span>;
+    }
+    ack_send_cv.notify_one();   <span class="hljs-comment">// wake up the ACK thread</span>
+
+    cycle += real_data_received;
+}
+</div></code></pre>
+<p>And at the very end of RunAsProxy, before returning, stop the thread cleanly:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// Tell the ACK thread to stop and wait for it to finish</span>
+{
+    <span class="hljs-built_in">std</span>::lock_guard lock{ack_send_mutex};
+    ack_thread_should_stop = <span class="hljs-literal">true</span>;
+}
+ack_send_cv.notify_one();
+ack_thread.join();   <span class="hljs-comment">// wait until thread has fully exited</span>
+</div></code></pre>
+<p><strong>Part C — Add ACK proxy to RunAsSkeleton</strong></p>
+<p>The skeleton also needs a background thread — this one listens for ACKs on channel 2:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// Add this BEFORE the SYNC phase in RunAsSkeleton:</span>
+
+<span class="hljs-comment">// ── Start ACK-listening proxy in background thread ───────────────────────</span>
+<span class="hljs-function"><span class="hljs-built_in">std</span>::thread <span class="hljs-title">ack_listener_thread</span><span class="hljs-params">([<span class="hljs-keyword">this</span>]()
+{
+    <span class="hljs-keyword">const</span> <span class="hljs-keyword">auto</span> ack_instance_result =
+        score::mw::com::InstanceSpecifier::Create(<span class="hljs-string">"score/AckMessage"</span>);
+    <span class="hljs-keyword">if</span> (!ack_instance_result.has_value()) { <span class="hljs-keyword">return</span>; }
+
+    <span class="hljs-comment">// Find the ACK service (offered by the proxy process)</span>
+    ServiceHandleContainer&lt;impl::HandleType&gt; handles{};
+    <span class="hljs-keyword">do</span>
+    {
+        <span class="hljs-keyword">auto</span> result = AckBridgeProxy::FindService(ack_instance_result.value());
+        <span class="hljs-keyword">if</span> (!result.has_value()) { <span class="hljs-keyword">return</span>; }
+        handles = <span class="hljs-built_in">std</span>::move(result).value();
+        <span class="hljs-keyword">if</span> (handles.empty()) { <span class="hljs-built_in">std</span>::this_thread::sleep_for(<span class="hljs-built_in">std</span>::chrono::milliseconds(<span class="hljs-number">500</span>)); }
+    } <span class="hljs-keyword">while</span> (handles.empty());
+
+    <span class="hljs-keyword">auto</span> ack_proxy_result = AckBridgeProxy::Create(handles.front());
+    <span class="hljs-keyword">if</span> (!ack_proxy_result.has_value()) { <span class="hljs-keyword">return</span>; }
+    <span class="hljs-keyword">auto</span>&amp; ack_proxy = ack_proxy_result.value();
+
+    ack_proxy.ack_event_.Subscribe(<span class="hljs-number">2U</span>);
+
+    <span class="hljs-comment">// Keep reading ACKs and storing them</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)
+    {
+        ack_proxy.ack_event_.GetNewSamples(
+            [<span class="hljs-keyword">this</span>](SamplePtr&lt;AckMessage&gt; sample) <span class="hljs-keyword">noexcept</span>
+            {
+                <span class="hljs-keyword">const</span> AckMessage&amp; ack = *sample.get();
+                <span class="hljs-keyword">if</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">strcmp</span>(ack.status, <span class="hljs-string">"ACK"</span>) == <span class="hljs-number">0</span>)
+                {
+                    <span class="hljs-comment">// Store the ACK and wake up RunAsSkeleton</span>
+                    <span class="hljs-built_in">std</span>::lock_guard lock{ack_mutex_};
+                    last_ack_cycle_ = ack.ack_for_cycle;
+                    ack_received_cv_.notify_one();   <span class="hljs-comment">// wake up the skeleton loop</span>
+                }
+            },
+            <span class="hljs-number">2U</span>);
+
+        <span class="hljs-built_in">std</span>::this_thread::sleep_for(<span class="hljs-built_in">std</span>::chrono::milliseconds(<span class="hljs-number">10</span>));
+    }
+})</span></span>;
+ack_listener_thread.detach();   <span class="hljs-comment">// runs independently, skeleton doesn't wait for it</span>
+</div></code></pre>
+<ol start="4">
+<li><strong>Manifest/Config File</strong>
+You need to register <code>&quot;score/AckMessage&quot;</code> as a second service in your config JSON, the same way <code>&quot;score/MapApiLanesStamped&quot;</code> is registered. The exact format depends on your config file — share it and I can show you exactly what to add.</li>
+</ol>
+<h2 id="the-complete-new-flow">The Complete New Flow</h2>
+<pre class="hljs"><code><div>Process A (skeleton)              Process B (proxy)
+────────────────────              ─────────────────
+ack_listener_thread starts        ack_thread starts
+  └─ searching for AckService       └─ creates AckSkeleton
+                                      └─ OfferService()
+  └─ found! subscribes
+
+Send SYNC...
+                                  Receives SYNC → phase=Syncing
+Send SYNC_ACK...
+                                  Receives SYNC_ACK → phase=ReceivingData
+
+Send data (cycle=0)
+waiting for ACK...
+                                  Receives data (cycle=0)
+                                  Signals ack_thread
+                                  ack_thread sends ACK(cycle=0)
+ack_listener receives ACK(0)
+last_ack_cycle_ = 0
+ack_received_cv_.notify_one()
+skeleton wakes up ✓
+Send data (cycle=1)
+...
+</div></code></pre>
+<h3 id="the-config-file--what-to-add">The Config File — What to Add</h3>
+<p>Now for  <code>mw_com_config.json</code>. The pattern is simple — you need to add an entry for <code>AckMessage</code> that mirrors the existing <code>MapApiLanesStamped</code> entry, but with different names and IDs.</p>
+<pre class="hljs"><code><div>{
+  <span class="hljs-attr">"serviceTypes"</span>: [
+    {
+      <span class="hljs-attr">"serviceTypeName"</span>: <span class="hljs-string">"/score/MapApiLanesStamped"</span>,
+      <span class="hljs-attr">"version"</span>: { <span class="hljs-attr">"major"</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">"minor"</span>: <span class="hljs-number">0</span> },
+      <span class="hljs-attr">"bindings"</span>: [
+        {
+          <span class="hljs-attr">"binding"</span>: <span class="hljs-string">"SHM"</span>,
+          <span class="hljs-attr">"serviceId"</span>: <span class="hljs-number">6432</span>,
+          <span class="hljs-attr">"events"</span>: [
+            { <span class="hljs-attr">"eventName"</span>: <span class="hljs-string">"map_api_lanes_stamped"</span>, <span class="hljs-attr">"eventId"</span>: <span class="hljs-number">1</span> },
+            { <span class="hljs-attr">"eventName"</span>: <span class="hljs-string">"dummy_data_stamped"</span>,    <span class="hljs-attr">"eventId"</span>: <span class="hljs-number">2</span> }
+          ]
+        }
+      ]
+    },
+    {
+      <span class="hljs-attr">"serviceTypeName"</span>: <span class="hljs-string">"/score/AckMessage"</span>,
+      <span class="hljs-attr">"version"</span>: { <span class="hljs-attr">"major"</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">"minor"</span>: <span class="hljs-number">0</span> },
+      <span class="hljs-attr">"bindings"</span>: [
+        {
+          <span class="hljs-attr">"binding"</span>: <span class="hljs-string">"SHM"</span>,
+          <span class="hljs-attr">"serviceId"</span>: <span class="hljs-number">6433</span>,
+          <span class="hljs-attr">"events"</span>: [
+            { <span class="hljs-attr">"eventName"</span>: <span class="hljs-string">"ack_event"</span>, <span class="hljs-attr">"eventId"</span>: <span class="hljs-number">1</span> }
+          ]
+        }
+      ]
+    }
+  ],
+  <span class="hljs-attr">"serviceInstances"</span>: [
+    {
+      <span class="hljs-attr">"instanceSpecifier"</span>: <span class="hljs-string">"score/MapApiLanesStamped"</span>,
+      <span class="hljs-attr">"serviceTypeName"</span>: <span class="hljs-string">"/score/MapApiLanesStamped"</span>,
+      <span class="hljs-attr">"version"</span>: { <span class="hljs-attr">"major"</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">"minor"</span>: <span class="hljs-number">0</span> },
+      <span class="hljs-attr">"instances"</span>: [
+        {
+          <span class="hljs-attr">"instanceId"</span>: <span class="hljs-number">1</span>,
+          <span class="hljs-attr">"allowedConsumer"</span>: { <span class="hljs-attr">"QM"</span>: [ <span class="hljs-number">4002</span>, <span class="hljs-number">0</span> ] },
+          <span class="hljs-attr">"allowedProvider"</span>: { <span class="hljs-attr">"QM"</span>: [ <span class="hljs-number">4001</span>, <span class="hljs-number">0</span> ] },
+          <span class="hljs-attr">"asil-level"</span>: <span class="hljs-string">"QM"</span>,
+          <span class="hljs-attr">"binding"</span>: <span class="hljs-string">"SHM"</span>,
+          <span class="hljs-attr">"events"</span>: [
+            {
+              <span class="hljs-attr">"eventName"</span>: <span class="hljs-string">"map_api_lanes_stamped"</span>,
+              <span class="hljs-attr">"numberOfSampleSlots"</span>: <span class="hljs-number">10</span>,
+              <span class="hljs-attr">"maxSubscribers"</span>: <span class="hljs-number">3</span>
+            }
+          ]
+        }
+      ]
+    },
+    {
+      <span class="hljs-attr">"instanceSpecifier"</span>: <span class="hljs-string">"score/AckMessage"</span>,
+      <span class="hljs-attr">"serviceTypeName"</span>: <span class="hljs-string">"/score/AckMessage"</span>,
+      <span class="hljs-attr">"version"</span>: { <span class="hljs-attr">"major"</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">"minor"</span>: <span class="hljs-number">0</span> },
+      <span class="hljs-attr">"instances"</span>: [
+        {
+          <span class="hljs-attr">"instanceId"</span>: <span class="hljs-number">1</span>,
+          <span class="hljs-attr">"allowedConsumer"</span>: { <span class="hljs-attr">"QM"</span>: [ <span class="hljs-number">4001</span>, <span class="hljs-number">0</span> ] },
+          <span class="hljs-attr">"allowedProvider"</span>: { <span class="hljs-attr">"QM"</span>: [ <span class="hljs-number">4002</span>, <span class="hljs-number">0</span> ] },
+          <span class="hljs-attr">"asil-level"</span>: <span class="hljs-string">"QM"</span>,
+          <span class="hljs-attr">"binding"</span>: <span class="hljs-string">"SHM"</span>,
+          <span class="hljs-attr">"events"</span>: [
+            {
+              <span class="hljs-attr">"eventName"</span>: <span class="hljs-string">"ack_event"</span>,
+              <span class="hljs-attr">"numberOfSampleSlots"</span>: <span class="hljs-number">10</span>,
+              <span class="hljs-attr">"maxSubscribers"</span>: <span class="hljs-number">3</span>
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+</div></code></pre>
+<h3 id="what-each-field-means--so-you-understand-it-not-just-copy-it">What each field means — so you understand it, not just copy it</h3>
+<pre class="hljs"><code><div>serviceTypeName  → matches the string you use in InstanceSpecifier::Create()
+                   &quot;/score/AckMessage&quot; → &quot;score/AckMessage&quot; in code
+                   (the leading / is just a convention in the config)
+
+serviceId        → a unique number identifying this service type to the SHM layer
+                   must be different from all other services → we use 6433
+
+eventName        → must EXACTLY match the string in your interface definition:
+                   ack_event_{*this, &quot;ack_event&quot;} → &quot;ack_event&quot; here
+
+instanceId       → which instance of this service (1 = first and only)
+
+allowedConsumer  → process ID allowed to receive (subscribe/proxy)
+allowedProvider  → process ID allowed to send (offer/skeleton)
+
+                   IMPORTANT: for AckMessage the roles are REVERSED vs MapApiLanesStamped:
+                   - Process 4001 is the original SENDER  → now CONSUMER of ACK
+                   - Process 4002 is the original RECEIVER → now PROVIDER of ACK
+</div></code></pre>
+<h2 id="output-after-testing">Output after testing:</h2>
+<p>==&gt; <strong>proxy</strong>:</p>
+<pre class="hljs"><code><div>vscode ➜ /workspaces/score_scrample (customized_scrample) $ ./bazel-bin/src/scrample   --mode proxy   --cycle-time 500   --num-cycles 20   --service_instance_manifest src/etc/mw_com_config.json
+score/MapApiLanesStamped: Running as proxy, looking for services
+mw::log initialization error: Error No logging configuration files could be found. occurred with context information: Failed to load configuration files. Fallback to console logging.
+score/MapApiLanesStamped: Found service, instantiating proxy
+score/MapApiLanesStamped: Subscribing to service
+Received SYNC — sender is ready, waiting for SYNC_ACK
+Received SYNC — sender is ready, waiting for SYNC_ACK
+score/MapApiLanesStamped: Cycle duration 500ms
+Received SYNC — sender is ready, waiting for SYNC_ACK
+Received SYNC — sender is ready, waiting for SYNC_ACK
+score/MapApiLanesStamped: Cycle duration 500ms
+Received SYNC — sender is ready, waiting for SYNC_ACK
+Received SYNC — sender is ready, waiting for SYNC_ACK
+score/MapApiLanesStamped: Cycle duration 500ms
+Received SYNC_ACK — data stream starting now
+Received data sample: x=0
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 0
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=1
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 1
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=2
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 2
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=3
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 3
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=4
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 4
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=5
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 5
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=6
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 6
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=7
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 7
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=8
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 8
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received data sample: x=9
+score/MapApiLanesStamped: Proxy received valid data
+score/MapApiLanesStamped: Cycle duration 500ms
+Sent ACK for cycle 9
+score/MapApiLanesStamped: Cycle duration 500ms
+score/MapApiLanesStamped: Cycle duration 500ms
+Received END — sender is done
+</div></code></pre>
+<p>==&gt;<strong>Skeleton</strong>:</p>
+<pre class="hljs"><code><div>vscode ➜ /workspaces/score_scrample (customized_scrample) $ ./bazel-bin/src/scrample   -
+-mode skeleton   --cycle-time 1000   --num-cycles 10   --service_instance_manifest src/etc/mw_com_config.json
+mw::log initialization error: Error No logging configuration files could be found. occurred with context information: Failed to load configuration files. Fallback to console logging.
+Waiting for proxy to subscribe, sending SYNC...
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Sending sample: x=0, sync_msg=&quot;SYNC&quot;
+Proceeding after SYNC attempts...
+Sending SYNC_ACK...
+Sending sample: x=0, sync_msg=&quot;SYNC_ACK&quot;
+Starting to send data
+Sending sample: x=0, sync_msg=&quot;&quot;
+ACK received for cycle 0, proceeding.
+Sending sample: x=1, sync_msg=&quot;&quot;
+ACK received for cycle 1, proceeding.
+Sending sample: x=2, sync_msg=&quot;&quot;
+ACK received for cycle 2, proceeding.
+Sending sample: x=3, sync_msg=&quot;&quot;
+ACK received for cycle 3, proceeding.
+Sending sample: x=4, sync_msg=&quot;&quot;
+ACK received for cycle 4, proceeding.
+Sending sample: x=5, sync_msg=&quot;&quot;
+ACK received for cycle 5, proceeding.
+Sending sample: x=6, sync_msg=&quot;&quot;
+ACK received for cycle 6, proceeding.
+Sending sample: x=7, sync_msg=&quot;&quot;
+ACK received for cycle 7, proceeding.
+Sending sample: x=8, sync_msg=&quot;&quot;
+ACK received for cycle 8, proceeding.
+Sending sample: x=9, sync_msg=&quot;&quot;
+ACK received for cycle 9, proceeding.
+Sending END...
+Sending sample: x=0, sync_msg=&quot;END&quot;
+Stop offering service... and terminating, bye bye
+</div></code></pre>
+
+</body>
+</html>

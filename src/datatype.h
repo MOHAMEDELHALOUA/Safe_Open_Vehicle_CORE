@@ -319,7 +319,7 @@ class AckBridgeInterface : public Trait::Base
   public:
     using Trait::Base::Base;
 
-    typename Trait::template Event<AckMessage> ack_event{*this, "ack_event"};
+    typename Trait::template Event<AckMessage> ack_event_{*this, "ack_event"};
 };
 
 using AckBridgeProxy = AsProxy<AckBridgeInterface>;

@@ -20,6 +20,8 @@
 
 #include "score/mw/com/impl/proxy_event.h"
 #include <chrono>
+#include <cstdlib>
+#include <mutex>
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <score/optional.hpp>
@@ -418,6 +420,68 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
 
     SampleReceiver receiver{instance_specifier, check_sample_hash};
 
+    // Start the ACK skeleton in a background thread
+
+    // These variables are shared between the main loop and the ACK thread:
+    std::mutex           ack_send_mutex{};
+    std::condition_variable ack_send_cv{};
+    std::uint32_t        cycle_to_ack{0U};
+    bool                 ack_requested{false};
+    bool                 ack_thread_should_stop{false};
+
+    // The ACK-sending thread:
+    std::thread ack_thread([&]()
+    {
+        // Create the ACK skeleton (proxy sends ACK, so it needs a skeleton here)
+        const auto ack_instance_result =
+            score::mw::com::InstanceSpecifier::Create("score/AckMessage");
+        if (!ack_instance_result.has_value())
+        {
+            std::cerr << "ACK: invalid instance specifier\n";
+            return;
+        }
+
+        auto ack_skeleton_result = AckBridgeSkeleton::Create(ack_instance_result.value());
+        if (!ack_skeleton_result.has_value())
+        {
+            std::cerr << "ACK: could not create skeleton: " << ack_skeleton_result.error() << "\n";
+            return;
+        }
+        auto& ack_skeleton = ack_skeleton_result.value();
+        ack_skeleton.OfferService();
+
+        // Loop: wait for a signal, then send ACK
+        while (true)
+        {
+            std::uint32_t cycle_num{0U};
+            {
+                std::unique_lock lock{ack_send_mutex};
+                // Sleep until main loop signals us or tells us to stop
+                ack_send_cv.wait(lock, [&]{
+                    return ack_requested || ack_thread_should_stop;
+                });
+
+                if (ack_thread_should_stop) { break; }
+
+                cycle_num = cycle_to_ack;
+                ack_requested = false;   // reset for next cycle
+            }
+
+            // Build and send the ACK sample
+            auto ack_sample_result = ack_skeleton.ack_event_.Allocate();
+            if (!ack_sample_result.has_value()) { continue; }
+
+            auto ack_sample = std::move(ack_sample_result).value();
+            ack_sample->ack_for_cycle = cycle_num;
+            std::strncpy(ack_sample->status, "ACK", 15);
+            ack_sample->status[15] = '\0';
+
+            ack_skeleton.ack_event_.Send(std::move(ack_sample));
+            std::cout << "Sent ACK for cycle " << cycle_num << "\n";
+        }
+
+        ack_skeleton.StopOfferService();
+    });
     // ── Main receive loop ────────────────────────────────────────────────────
     // We loop until we have received num_cycles *real data* samples.
     // Control messages (SYNC, SYNC_ACK, END) do NOT advance the cycle counter.
@@ -497,6 +561,13 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
         if (real_data_received >= 1U)
         {
             std::cout << ToString(instance_specifier, ": Proxy received valid data\n");
+            //Signal the ACK thread to send ACK for this cycle
+            {
+                std::lock_guard lock{ack_send_mutex};
+                cycle_to_ack = static_cast<std::uint32_t>(cycle);
+                ack_requested = true;
+            }
+            ack_send_cv.notify_one(); //wake up the ACK thread
             cycle += real_data_received;
         }
 
@@ -508,6 +579,13 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
 
         event_received.reset();
     }
+    // Tell the ACK thread to stop and wait for it to finish
+    {
+        std::lock_guard lock{ack_send_mutex};
+        ack_thread_should_stop = true;
+    }
+    ack_send_cv.notify_one();
+    ack_thread.join();   // wait until thread has fully exited
 
     std::cout << ToString(instance_specifier, ": Unsubscribing...\n");
     map_api_lanes_stamped_event.Unsubscribe();
@@ -538,6 +616,50 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         std::cerr << "Unable to offer service for skeleton: " << offer_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
+
+    // ── Start ACK-listening proxy in background thread ───────────────────────
+    std::thread ack_listener_thread([this]()
+    {
+        const auto ack_instance_result =
+            score::mw::com::InstanceSpecifier::Create("score/AckMessage");
+        if (!ack_instance_result.has_value()) { return; }
+
+        // Find the ACK service (offered by the proxy process)
+        ServiceHandleContainer<impl::HandleType> handles{};
+        do
+        {
+            auto result = AckBridgeProxy::FindService(ack_instance_result.value());
+            if (!result.has_value()) { return; }
+            handles = std::move(result).value();
+            if (handles.empty()) { std::this_thread::sleep_for(std::chrono::milliseconds(500)); }
+        } while (handles.empty());
+
+        auto ack_proxy_result = AckBridgeProxy::Create(handles.front());
+        if (!ack_proxy_result.has_value()) { return; }
+        auto& ack_proxy = ack_proxy_result.value();
+
+        ack_proxy.ack_event_.Subscribe(2U);
+
+        // Keep reading ACKs and storing them
+        while (true)
+        {
+            ack_proxy.ack_event_.GetNewSamples(
+                [this](SamplePtr<AckMessage> sample) noexcept
+                {
+                    const AckMessage& ack = *sample.get();
+                    if (std::strcmp(ack.status, "ACK") == 0)
+                    {
+                        // Store the ACK and wake up RunAsSkeleton
+                        std::lock_guard lock{ack_mutex_};
+                        last_ack_cycle_ = ack.ack_for_cycle;
+                        ack_received_cv_.notify_one();   // wake up the skeleton loop
+                    }
+                },
+                2U);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    });
 
     // ── PHASE 1: Send SYNC repeatedly until a proxy has subscribed ───────────
     // This avoids the race condition where SYNC is sent before the proxy is
@@ -601,6 +723,30 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
             skeleton.map_api_lanes_stamped_.Send(std::move(sample_result).value());
             event_published_ = true;
         }
+        //Wait for ACK form the proxy
+        //We sleep here until the ACK-listening thread wakes us up.
+        //The timeout (5s) prevents waiting forever if the proxy crashes.
+
+        {
+            std::unique_lock lock{ack_mutex_};
+
+            const bool ack_arrived = ack_received_cv_.wait_for(
+                lock,
+                std::chrono::seconds(5),
+                [this, cycle]{
+                    //wake up condition: last_ack_cycle_ must match current cycle
+                    return last_ack_cycle_.has_value()&&
+                            last_ack_cycle_.value() == static_cast<std::uint32_t>(cycle);
+                }
+            );
+            if(!ack_arrived){
+                std::cerr << "Timeout: no ACK received for cycle "<< cycle << ", terminating.\n";
+                return EXIT_FAILURE;
+            }
+
+            std::cout << "ACK received for cycle " << cycle << ", proceeding.\n";
+        }
+        //only sleep between cycles if desired - now we're ACK-gated not time-gated
         std::this_thread::sleep_for(cycle_time);
     }
 
@@ -618,6 +764,7 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
     skeleton.StopOfferService();
     std::cout << " and terminating, bye bye\n";
 
+    ack_listener_thread.detach();   // runs independently, skeleton doesn't wait for it
     return EXIT_SUCCESS;
 }
 

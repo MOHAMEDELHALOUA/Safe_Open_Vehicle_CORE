@@ -2,23 +2,27 @@
   "serviceTypes": [
     {
       "serviceTypeName": "/score/MapApiLanesStamped",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
+      "version": { "major": 1, "minor": 0 },
       "bindings": [
         {
           "binding": "SHM",
           "serviceId": 6432,
           "events": [
-            {
-              "eventName": "map_api_lanes_stamped",
-              "eventId": 1
-            },
-            {
-              "eventName": "dummy_data_stamped",
-              "eventId": 2
-            }
+            { "eventName": "map_api_lanes_stamped", "eventId": 1 },
+            { "eventName": "dummy_data_stamped",    "eventId": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/score/AckMessage",
+      "version": { "major": 1, "minor": 0 },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+            { "eventName": "ack_event", "eventId": 1 }
           ]
         }
       ]
@@ -28,30 +32,38 @@
     {
       "instanceSpecifier": "score/MapApiLanesStamped",
       "serviceTypeName": "/score/MapApiLanesStamped",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
+      "version": { "major": 1, "minor": 0 },
       "instances": [
         {
           "instanceId": 1,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
             {
               "eventName": "map_api_lanes_stamped",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "score/AckMessage",
+      "serviceTypeName": "/score/AckMessage",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": { "QM": [ 4001, 0 ] },
+          "allowedProvider": { "QM": [ 4002, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "ack_event",
               "numberOfSampleSlots": 10,
               "maxSubscribers": 3
             }

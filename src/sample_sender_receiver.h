@@ -23,6 +23,7 @@
 #include <mutex>
 #include <random>
 #include <vector>
+#include <condition_variable>
 
 namespace score::mw::com
 {
@@ -48,6 +49,11 @@ class EventSenderReceiver
 
     std::mutex map_lanes_mutex_{};
     std::vector<SamplePtr<MapApiLanesStamped>> map_lanes_list_{};
+
+    //ACK channel memebers
+    score::cpp::optional<std::uint32_t> last_ack_cycle_{};
+    std::mutex ack_mutex_{};
+    std::condition_variable ack_received_cv_{};
 };
 
 }  // namespace score::mw::com
