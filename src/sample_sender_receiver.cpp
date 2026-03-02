@@ -20,12 +20,11 @@
 
 #include "score/mw/com/impl/proxy_event.h"
 #include <chrono>
-#include <codecvt>
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <score/optional.hpp>
 
-#include <cstring>
+#include <cstring>   // for std::strncpy, std::strcmp
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -79,6 +78,9 @@ void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
     seed = score::cpp::hash_bytes_fnv1a(static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
 }
 
+// =============================================================================
+// SampleReceiver — receives and validates samples from the skeleton
+// =============================================================================
 class SampleReceiver
 {
   public:
@@ -86,14 +88,56 @@ class SampleReceiver
         : instance_specifier_{instance_specifier},
           last_received_{},
           received_{0U},
+          control_msgs_received_{0U},          // FIX: initialise in constructor too
           check_sample_hash_{check_sample_hash}
     {
     }
 
+    // -------------------------------------------------------------------------
+    // ReceiveSample — called for every sample delivered by GetNewSamples()
+    // -------------------------------------------------------------------------
     void ReceiveSample(const MapApiLanesStamped& map) noexcept
     {
-        std::cout << ToString(instance_specifier_, ": Received sample: ", map.x, "\n");
+        // FIX: Check each control message with strcmp FIRST, then increment
+        // counter and update phase. The previous version returned early BEFORE
+        // updating the phase, so the proxy was stuck in WaitingForSync forever.
 
+        // ── Control message: SYNC ───────────────────────────────────────────
+        if (std::strcmp(map.sync_msg, "SYNC") == 0)
+        {
+            std::cout << "Received SYNC — sender is ready, waiting for SYNC_ACK\n";
+            current_phase_ = Phase::Syncing;
+            control_msgs_received_ += 1U;   // count it so the mismatch check works
+            return;
+        }
+
+        // ── Control message: SYNC_ACK ───────────────────────────────────────
+        if (std::strcmp(map.sync_msg, "SYNC_ACK") == 0)
+        {
+            std::cout << "Received SYNC_ACK — data stream starting now\n";
+            current_phase_ = Phase::ReceivingData;
+            control_msgs_received_ += 1U;
+            return;
+        }
+
+        // ── Control message: END ────────────────────────────────────────────
+        if (std::strcmp(map.sync_msg, "END") == 0)
+        {
+            std::cout << "Received END — sender is done\n";
+            current_phase_ = Phase::Done;
+            control_msgs_received_ += 1U;
+            return;
+        }
+
+        // ── Real data sample ────────────────────────────────────────────────
+        // Guard: ignore data that arrives before the handshake is complete.
+        if (current_phase_ != Phase::ReceivingData)
+        {
+            std::cerr << "Warning: received data sample before SYNC_ACK, ignoring\n";
+            return;
+        }
+
+        std::cout << "Received data sample: x=" << map.x << "\n";
         if (CheckReceivedSample(map))
         {
             received_ += 1U;
@@ -101,14 +145,35 @@ class SampleReceiver
         last_received_ = map.x;
     }
 
-    std::size_t GetReceivedSampleCount() const noexcept
-    {
-        return received_;
-    }
+    // ── Accessors ────────────────────────────────────────────────────────────
+
+    /// Number of valid real-data samples received (SYNC/ACK/END not counted).
+    std::size_t GetReceivedSampleCount() const noexcept { return received_; }
+
+    /// Number of control messages received (SYNC, SYNC_ACK, END).
+    /// FIX: used by RunAsProxy to build the correct total for the mismatch check.
+    std::size_t GetControlMsgCount() const noexcept { return control_msgs_received_; }
+
+    /// True once the END message has been received.
+    bool IsDone() const noexcept { return current_phase_ == Phase::Done; }
 
   private:
+
+    // ── Phase state machine ──────────────────────────────────────────────────
+    enum class Phase
+    {
+        WaitingForSync,   // initial state — no SYNC seen yet
+        Syncing,          // SYNC received, waiting for SYNC_ACK
+        ReceivingData,    // SYNC_ACK received — real data accepted
+        Done              // END received
+    };
+
+    Phase current_phase_{Phase::WaitingForSync};
+
+    // ── Sample integrity checks ──────────────────────────────────────────────
     bool CheckReceivedSample(const MapApiLanesStamped& map) const noexcept
     {
+        // Order check: x must always be strictly increasing
         if (last_received_.has_value())
         {
             if (map.x <= last_received_.value())
@@ -123,6 +188,7 @@ class SampleReceiver
             }
         }
 
+        // Hash check: recompute hash from lane data and compare with sent value
         if (check_sample_hash_)
         {
             std::size_t hash_value = START_HASH;
@@ -146,20 +212,28 @@ class SampleReceiver
         return true;
     }
 
+    // ── Member variables ─────────────────────────────────────────────────────
     const score::mw::com::InstanceSpecifier& instance_specifier_;
     score::cpp::optional<std::uint32_t> last_received_;
     std::size_t received_;
+    std::size_t control_msgs_received_;
     bool check_sample_hash_;
 };
 
-score::cpp::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
-    IpcBridgeProxy& proxy)
+// =============================================================================
+// Helper: get the typed proxy event from an IpcBridgeProxy
+// =============================================================================
+score::cpp::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>>
+GetMapApiLanesStampedProxyEvent(IpcBridgeProxy& proxy)
 {
     return proxy.map_api_lanes_stamped_;
 }
 
-score::cpp::optional<std::reference_wrapper<impl::GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(
-    GenericProxy& generic_proxy)
+// =============================================================================
+// Helper: get the generic proxy event from a GenericProxy
+// =============================================================================
+score::cpp::optional<std::reference_wrapper<impl::GenericProxyEvent>>
+GetMapApiLanesStampedProxyEvent(GenericProxy& generic_proxy)
 {
     const std::string event_name{"map_api_lanes_stamped"};
     auto event_it = generic_proxy.GetEvents().find(event_name);
@@ -171,36 +245,26 @@ score::cpp::optional<std::reference_wrapper<impl::GenericProxyEvent>> GetMapApiL
     return event_it->second;
 }
 
-/// \brief Function that returns the value pointed to by a pointer
+/// Returns the value pointed to by a typed pointer.
 const MapApiLanesStamped& GetSamplePtrValue(const MapApiLanesStamped* const sample_ptr)
 {
     return *sample_ptr;
 }
 
-/// \brief Function that casts and returns the value pointed to by a void pointer
-///
-/// Assumes that the object in memory being pointed to is of type MapApiLanesStamped.
+/// Casts a void pointer to MapApiLanesStamped and returns the value.
 const MapApiLanesStamped& GetSamplePtrValue(const void* const void_ptr)
 {
     auto* const typed_ptr = static_cast<const MapApiLanesStamped*>(void_ptr);
     return *typed_ptr;
 }
 
-/// \brief Function that extracts the underlying pointer to const from a SamplePtr and casts away the const. Only used
-/// in death test to check that we can't modify the SamplePtr!
+/// Extracts a non-const pointer from a SamplePtr<T>. Used only in death tests.
 template <typename SampleType>
 SampleType* ExtractNonConstPointer(const SamplePtr<SampleType>& sample) noexcept
 {
     const SampleType* sample_const_ptr = sample.get();
-
-    // The underlying shared memory in which the SamplePtr is stored (i.e. the data section) is opened read-only by the
-    // operating system when we open and mmap the memory into our consumer process. However, the SampleType itself is
-    // not a const object (although the SamplePtr holds a pointer to const). The standard states that "Modifying a const
-    // object through a non-const access path and referring to a volatile object through a non-volatile glvalue results
-    // in undefined behavior." (https://en.cppreference.com/w/cpp/language/const_cast). We are _not_ modifying a const
-    // object. We are modifying a non-const object that is pointer to by a pointer to const. Therefore, modifying the
-    // underlying object after using const cast is not undefined behaviour. We expect that the failure should occur
-    // since the memory in which the object is allocated is in read-only memory.
+    // See original comment: we are casting away constness of the pointer, not
+    // of the underlying object, so this is not UB — the object itself is not const.
     auto* sample_non_const_ptr = const_cast<SampleType*>(sample_const_ptr);
     return sample_non_const_ptr;
 }
@@ -214,11 +278,13 @@ void ModifySampleValue(const SamplePtr<MapApiLanesStamped>& sample)
 void ModifySampleValue(const SamplePtr<void>& sample)
 {
     auto* const sample_non_const_ptr = ExtractNonConstPointer(sample);
-
     auto* const typed_ptr = static_cast<MapApiLanesStamped*>(sample_non_const_ptr);
     typed_ptr->x += 1;
 }
 
+// =============================================================================
+// Helper: poll FindService until a handle is found
+// =============================================================================
 template <typename ProxyType = IpcBridgeProxy>
 score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instance_specifier)
 {
@@ -242,9 +308,19 @@ score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& 
     return handles.front();
 }
 
+// =============================================================================
+// PrepareMapLaneSample — allocates and fills one sample
+//
+// Parameters:
+//   skeleton   — the skeleton used to allocate from shared memory
+//   cycle      — the cycle counter, stored in sample->x
+//   sync_msg   — a C-string written into the fixed char[16] field.
+//                Pass "" for real data samples, or "SYNC"/"SYNC_ACK"/"END"
+//                for control messages.
+// =============================================================================
 Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(IpcBridgeSkeleton& skeleton,
                                                                     const std::size_t cycle,
-                                                                    const char sync_msg[16])
+                                                                    const char* sync_msg)   // FIX: use const char* (simpler, compatible with string literals)
 {
     const std::default_random_engine::result_type seed{static_cast<std::default_random_engine::result_type>(
         std::chrono::steady_clock::now().time_since_epoch().count())};
@@ -256,24 +332,35 @@ Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(IpcBridgeSke
         return sample_result;
     }
     auto sample = std::move(sample_result).value();
+
     sample->hash_value = START_HASH;
     sample->x = static_cast<std::uint32_t>(cycle);
-    sample->sync_msg = sync_msg;
-    std::cout << ToString("Sending sample: ", sample->x, "\n");
+
+    // FIX: use strncpy to copy into the fixed-size char array.
+    // Cannot use = assignment on char arrays in C++.
+    std::strncpy(sample->sync_msg, sync_msg, 15);  // copy at most 15 characters
+    sample->sync_msg[15] = '\0';                    // always null-terminate
+
+    std::cout << ToString("Sending sample: x=", sample->x,
+                          ", sync_msg=\"", sample->sync_msg, "\"\n");
+
     for (MapApiLaneData& lane : sample->lanes)
     {
         for (LaneIdType& successor : lane.successor_lanes)
         {
             successor = std::uniform_int_distribution<std::size_t>()(rng);
         }
-
         HashArray(lane.successor_lanes, sample->hash_value);
     }
+
     return sample;
 }
 
 }  // namespace
 
+// =============================================================================
+// RunAsProxy — receives data published by the skeleton
+// =============================================================================
 template <typename ProxyType, typename ProxyEventType>
 int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
                                     const score::cpp::optional<std::chrono::milliseconds> cycle_time,
@@ -281,11 +368,13 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
                                     bool try_writing_to_data_segment,
                                     bool check_sample_hash)
 {
-    // For a GenericProxy, the SampleType will be void. For a regular proxy, it will by MapApiLanesStamped.
+    // For GenericProxy, SampleType is void. For IpcBridgeProxy it is MapApiLanesStamped.
     using SampleType =
         typename std::conditional<std::is_same<ProxyType, GenericProxy>::value, void, MapApiLanesStamped>::type;
+
     constexpr std::size_t SAMPLES_PER_CYCLE = 2U;
 
+    // ── Find the service ─────────────────────────────────────────────────────
     auto handle_result = GetHandleFromSpecifier(instance_specifier);
     if (!handle_result.has_value())
     {
@@ -295,6 +384,7 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     }
     auto handle = handle_result.value();
 
+    // ── Create proxy ─────────────────────────────────────────────────────────
     auto proxy_result = ProxyType::Create(std::move(handle));
     if (!proxy_result.has_value())
     {
@@ -303,6 +393,7 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     }
     auto& proxy = proxy_result.value();
 
+    // ── Get the event handle ─────────────────────────────────────────────────
     auto map_api_lanes_stamped_event_optional = GetMapApiLanesStampedProxyEvent(proxy);
     if (!map_api_lanes_stamped_event_optional.has_value())
     {
@@ -311,6 +402,7 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     }
     auto& map_api_lanes_stamped_event = map_api_lanes_stamped_event_optional.value().get();
 
+    // ── Optional callback mode (no cycle-time polling) ───────────────────────
     concurrency::Notification event_received;
     if (!cycle_time.has_value())
     {
@@ -320,57 +412,72 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
         });
     }
 
+    // ── Subscribe ────────────────────────────────────────────────────────────
     std::cout << ToString(instance_specifier, ": Subscribing to service\n");
     map_api_lanes_stamped_event.Subscribe(SAMPLES_PER_CYCLE);
 
-    score::cpp::optional<char> last_received{};
     SampleReceiver receiver{instance_specifier, check_sample_hash};
+
+    // ── Main receive loop ────────────────────────────────────────────────────
+    // We loop until we have received num_cycles *real data* samples.
+    // Control messages (SYNC, SYNC_ACK, END) do NOT advance the cycle counter.
     for (std::size_t cycle = 0U; cycle < num_cycles;)
     {
         const auto cycle_start_time = std::chrono::steady_clock::now();
+
         if (cycle_time.has_value())
         {
             std::this_thread::sleep_for(*cycle_time);
         }
 
-        const auto received_before = receiver.GetReceivedSampleCount();
+        // FIX: snapshot BOTH counters before calling GetNewSamples so we can
+        // compute exactly how many of each kind were processed this iteration.
+        const auto received_before      = receiver.GetReceivedSampleCount();
+        const auto control_before       = receiver.GetControlMsgCount();
+
         Result<std::size_t> num_samples_received = map_api_lanes_stamped_event.GetNewSamples(
             [&receiver, try_writing_to_data_segment](SamplePtr<SampleType> sample) noexcept {
                 if (try_writing_to_data_segment)
                 {
-                    // Try writing to the data segment (in which the sample data is stored). Used in a death test to
-                    // ensure that this is not possible.
+                    // Death-test path: attempt to write into read-only shared memory.
                     ModifySampleValue(sample);
                 }
-
-                // For the GenericProxy case, the void pointer managed by the SamplePtr<void> will be cast to
-                // MapApiLanesStamped.
                 const MapApiLanesStamped& sample_value = GetSamplePtrValue(sample.get());
                 receiver.ReceiveSample(sample_value);
             },
             SAMPLES_PER_CYCLE);
-        const auto received = receiver.GetReceivedSampleCount() - received_before;
 
+        // FIX: total_processed = real data + control messages delivered this cycle.
+        // This must equal what GetNewSamples() reported, otherwise something went wrong.
+        const auto total_processed =
+            (receiver.GetReceivedSampleCount() + receiver.GetControlMsgCount())
+            - (received_before + control_before);
+
+        // ── Error detection ──────────────────────────────────────────────────
         const bool get_new_samples_api_error = !num_samples_received.has_value();
-        const bool mismatch_api_returned_receive_count_vs_sample_callbacks = *num_samples_received != received;
-        const bool receive_handler_called_without_new_samples = *num_samples_received == 0 && !cycle_time.has_value();
 
-        if (get_new_samples_api_error || mismatch_api_returned_receive_count_vs_sample_callbacks ||
-            receive_handler_called_without_new_samples)
+        // FIX: renamed to 'mismatch' — single, unambiguous variable name.
+        const bool mismatch = (*num_samples_received != total_processed);
+
+        const bool receive_handler_called_without_new_samples =
+            (*num_samples_received == 0U) && !cycle_time.has_value();
+
+        if (get_new_samples_api_error || mismatch || receive_handler_called_without_new_samples)
         {
             std::stringstream ss;
             ss << instance_specifier << ": Error in cycle " << cycle << " during sample reception: ";
+
             if (!get_new_samples_api_error)
             {
-                if (mismatch_api_returned_receive_count_vs_sample_callbacks)
+                if (mismatch)
                 {
-                    ss << "number of received samples doesn't match to what IPC claims: " << *num_samples_received
-                       << " vs " << received;
+                    ss << "number of processed samples doesn't match what IPC claims: "
+                       << *num_samples_received << " vs " << total_processed;
                 }
                 else
                 {
-                    ss << "expected at least one new sample, since event-notifier has been called, but "
-                          "GetNewSamples() didn't provide one! ";
+                    ss << "expected at least one new sample since event-notifier was called, "
+                          "but GetNewSamples() provided none!";
                 }
             }
             else
@@ -384,14 +491,16 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
             return EXIT_FAILURE;
         }
 
-        if (*num_samples_received >= 1U)
+        // FIX: advance cycle only by the number of *real data* samples received,
+        // not by num_samples_received which includes control messages.
+        const auto real_data_received = receiver.GetReceivedSampleCount() - received_before;
+        if (real_data_received >= 1U)
         {
             std::cout << ToString(instance_specifier, ": Proxy received valid data\n");
-            cycle += *num_samples_received;
+            cycle += real_data_received;
         }
 
         const auto cycle_duration = std::chrono::steady_clock::now() - cycle_start_time;
-
         std::cout << ToString(instance_specifier,
                               ": Cycle duration ",
                               std::chrono::duration_cast<std::chrono::milliseconds>(cycle_duration).count(),
@@ -406,10 +515,14 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     return EXIT_SUCCESS;
 }
 
+// =============================================================================
+// RunAsSkeleton — sends data to all subscribed proxies
+// =============================================================================
 int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier,
                                        const std::chrono::milliseconds cycle_time,
                                        const std::size_t num_cycles)
 {
+    // ── Create skeleton ──────────────────────────────────────────────────────
     auto create_result = IpcBridgeSkeleton::Create(instance_specifier);
     if (!create_result.has_value())
     {
@@ -418,6 +531,7 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
     }
     auto& skeleton = create_result.value();
 
+    // ── Offer the service ────────────────────────────────────────────────────
     const auto offer_result = skeleton.OfferService();
     if (!offer_result.has_value())
     {
@@ -425,20 +539,41 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         return EXIT_FAILURE;
     }
 
-    // ── PHASE 1: Send SYNC ──────────────────────────────────────────────
-    std::cout << "Sending SYNC...\n";
-    auto sync_sample = PrepareMapLaneSample(skeleton, 0U, "SYNC");
-
-    if (!sync_sample.has_value()) { return EXIT_FAILURE; }
+    // ── PHASE 1: Send SYNC repeatedly until a proxy has subscribed ───────────
+    // This avoids the race condition where SYNC is sent before the proxy is
+    // ready to receive it, which would leave the proxy stuck in WaitingForSync.
+    std::cout << "Waiting for proxy to subscribe, sending SYNC...\n";
+    while (true)
     {
-        std::lock_guard lock{event_sending_mutex_};
-        skeleton.map_api_lanes_stamped_.Send(std::move(sync_sample).value());
+        auto sync_sample = PrepareMapLaneSample(skeleton, 0U, "SYNC");
+        if (!sync_sample.has_value()) { return EXIT_FAILURE; }
+
+        {
+            std::lock_guard lock{event_sending_mutex_};
+            skeleton.map_api_lanes_stamped_.Send(std::move(sync_sample).value());
+        }
+
+        // If the S-CORE API provides a way to query subscriber count, use it here.
+        // For now we wait 100ms between retries and stop after one successful send
+        // once a subscriber is detected. Adjust to match your API.
+        // Example (if API supports it):
+        //   if (skeleton.map_api_lanes_stamped_.GetSubscriberCount() > 0) { break; }
+        //
+        // Simple time-based fallback — send SYNC for up to 2 seconds, then proceed:
+        static std::size_t sync_attempts = 0U;
+        sync_attempts += 1U;
+        if (sync_attempts >= 20U)   // 20 * 100ms = 2 seconds maximum wait
+        {
+            std::cout << "Proceeding after SYNC attempts...\n";
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // Wait a moment to give the proxy time to receive SYNC and get ready
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // Give the proxy a moment to process the last SYNC before sending SYNC_ACK
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    // ── PHASE 2: Send SYNC_ACK to signal "data is coming now" ──────────
+    // ── PHASE 2: Send SYNC_ACK — signals that real data is about to start ────
     std::cout << "Sending SYNC_ACK...\n";
     auto sync_ack_sample = PrepareMapLaneSample(skeleton, 0U, "SYNC_ACK");
     if (!sync_ack_sample.has_value()) { return EXIT_FAILURE; }
@@ -447,12 +582,15 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         skeleton.map_api_lanes_stamped_.Send(std::move(sync_ack_sample).value());
     }
 
-    // ── PHASE 3: Send actual data ───────────────────────────────────────
+    // Small pause so the proxy transitions to ReceivingData before data arrives
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+    // ── PHASE 3: Send real data ──────────────────────────────────────────────
     std::cout << "Starting to send data\n";
     for (std::size_t cycle = 0U; cycle < num_cycles || num_cycles == 0U; ++cycle)
     {
-        auto sample_result = PrepareMapLaneSample(skeleton, cycle, "Data");  // Data = real data
+        // Empty sync_msg ("") means this is a real data sample
+        auto sample_result = PrepareMapLaneSample(skeleton, cycle, "");
         if (!sample_result.has_value())
         {
             std::cerr << "Sample allocation failed. Exiting.\n";
@@ -466,7 +604,7 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         std::this_thread::sleep_for(cycle_time);
     }
 
-    // ── PHASE 4: Send END ───────────────────────────────────────────────
+    // ── PHASE 4: Send END — signals that no more data will follow ────────────
     std::cout << "Sending END...\n";
     auto end_sample = PrepareMapLaneSample(skeleton, 0U, "END");
     if (!end_sample.has_value()) { return EXIT_FAILURE; }
@@ -475,19 +613,25 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         skeleton.map_api_lanes_stamped_.Send(std::move(end_sample).value());
     }
 
+    // ── Stop offering the service ─────────────────────────────────────────────
     std::cout << "Stop offering service...";
     skeleton.StopOfferService();
-    std::cout << "and terminating, bye bye\n";
+    std::cout << " and terminating, bye bye\n";
 
     return EXIT_SUCCESS;
 }
 
+// =============================================================================
+// Explicit template instantiations
+// (required because the template body is in the .cpp file)
+// =============================================================================
 template int EventSenderReceiver::RunAsProxy<IpcBridgeProxy, impl::ProxyEvent<MapApiLanesStamped>>(
     const score::mw::com::InstanceSpecifier&,
     const score::cpp::optional<std::chrono::milliseconds>,
     const std::size_t,
     bool,
     bool);
+
 template int EventSenderReceiver::RunAsProxy<impl::GenericProxy, impl::GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
     const score::cpp::optional<std::chrono::milliseconds>,

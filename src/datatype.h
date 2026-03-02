@@ -15,6 +15,7 @@
 #define SCORE_IPC_BRIDGE_DATATYPE_H
 
 #include "score/mw/com/types.h"
+#include <cstdint>
 #include <string>
 
 namespace score::mw::com
@@ -291,6 +292,13 @@ struct MapApiLanesStamped
     char sync_msg[16];
 };
 
+//new struct for ack messages
+struct AckMessage
+{
+    std::uint32_t ack_for_cycle;//which cycle are we ACKing.
+    char status[16]; //"ACK", "NACK", ...etc.
+};
+
 template <typename Trait>
 class IpcBridgeInterface : public Trait::Base
 {
@@ -302,6 +310,20 @@ class IpcBridgeInterface : public Trait::Base
 
 using IpcBridgeProxy = AsProxy<IpcBridgeInterface>;
 using IpcBridgeSkeleton = AsSkeleton<IpcBridgeInterface>;
+
+
+//Add second interface
+template <typename Trait>
+class AckBridgeInterface : public Trait::Base
+{
+  public:
+    using Trait::Base::Base;
+
+    typename Trait::template Event<AckMessage> ack_event{*this, "ack_event"};
+};
+
+using AckBridgeProxy = AsProxy<AckBridgeInterface>;
+using AckBridgeSkeleton = AsSkeleton<AckBridgeInterface>;
 
 }  // namespace score::mw::com
 
