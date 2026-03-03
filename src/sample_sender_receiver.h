@@ -23,6 +23,8 @@
 #include <mutex>
 #include <random>
 #include <vector>
+#include <condition_variable>
+#include <functional>
 
 namespace score::mw::com
 {
@@ -31,14 +33,12 @@ class EventSenderReceiver
 {
   public:
     int RunAsSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier,
-                      const score::mw::com::InstanceSpecifier& reverse_specifier,  // NEW
                       const std::chrono::milliseconds cycle_time,
                       const std::size_t num_cycles);
 
     template <typename ProxyType = score::mw::com::IpcBridgeProxy,
               typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
-                         const score::mw::com::InstanceSpecifier& reverse_specifier,  // NEW
                    const score::cpp::optional<std::chrono::milliseconds> cycle_time,
                    const std::size_t num_cycles,
                    bool try_writing_to_data_segment = false,
@@ -50,6 +50,12 @@ class EventSenderReceiver
 
     std::mutex map_lanes_mutex_{};
     std::vector<SamplePtr<MapApiLanesStamped>> map_lanes_list_{};
+
+    //ACK channel memebers
+    score::cpp::optional<std::uint32_t> last_ack_cycle_{};
+    std::mutex ack_mutex_{};
+    std::condition_variable ack_received_cv_{};
+    bool sync_acknowledged_{false};
 };
 
 }  // namespace score::mw::com

@@ -30,8 +30,6 @@ struct Params
     score::cpp::optional<std::chrono::milliseconds> cycle_time;
     score::cpp::optional<unsigned long> cycle_num;
     bool check_sample_hash;
-    // NEW: optional reverse specifier (defaults to "score/MapApiLanesStamped/reverse")
-    score::cpp::optional<std::string> reverse_specifier;
 };
 
 template <typename ParsedType, typename SavedType = ParsedType>
@@ -63,12 +61,6 @@ Params ParseCommandLineArguments(const int argc, const char** argv)
         po::bool_switch(),
         "Do not check the sample hash value in the receiver. If true, the sample hash is not checked.");
 
-    //new option:
-    options.add_options()(
-    "reverse_instance_specifier,r",
-    po::value<std::string>()->default_value("score/MapApiLanesStamped/reverse"),
-    "Instance specifier for the reverse (feedback) channel");
-
     po::variables_map args;
     const auto parsed_args =
         po::command_line_parser{argc, argv}
@@ -84,11 +76,10 @@ Params ParseCommandLineArguments(const int argc, const char** argv)
     }
 
     return {GetValueIfProvided<std::string>(args, "mode"),
-        GetValueIfProvided<std::string>(args, "service_instance_manifest"),
-        GetValueIfProvided<std::size_t, std::chrono::milliseconds>(args, "cycle-time"),
-        GetValueIfProvided<std::size_t>(args, "num-cycles"),
-        args.count("disable-hash-check") == 0U,
-        GetValueIfProvided<std::string>(args, "reverse_instance_specifier")};
+            GetValueIfProvided<std::string>(args, "service_instance_manifest"),
+            GetValueIfProvided<std::size_t, std::chrono::milliseconds>(args, "cycle-time"),
+            GetValueIfProvided<std::size_t>(args, "num-cycles"),
+            args.count("disable-hash-check") == 0U};
 }
 
 int main(const int argc, const char** argv)
@@ -124,23 +115,17 @@ int main(const int argc, const char** argv)
     }
     const auto& instance_specifier = instance_specifier_result.value();
 
-    // NEW: reverse channel specifier
-    const std::string reverse_str = params.reverse_specifier.value_or("score/MapApiLanesStamped/reverse");
-    const auto reverse_specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{reverse_str});
-    if (!reverse_specifier_result.has_value())
-    {
-        std::cerr << "Invalid reverse instance specifier, terminating." << std::endl;
-        return EXIT_FAILURE;
-    }
-    const auto& reverse_specifier = reverse_specifier_result.value();
-
     if (mode == "send" || mode == "skeleton")
     {
-        return event_sender_receiver.RunAsSkeleton(instance_specifier, reverse_specifier, cycle_time, cycles);
+        return event_sender_receiver.RunAsSkeleton(instance_specifier, cycle_time, cycles);
     }
     else if (mode == "recv" || mode == "proxy")
     {
-        return event_sender_receiver.RunAsProxy(instance_specifier, reverse_specifier, cycle_time, cycles, false, check_sample_hash);
+        return event_sender_receiver.RunAsProxy(instance_specifier, cycle_time, cycles, false, check_sample_hash);
+    }
+    else
+    {
+        std::cerr << "Unknown mode " << mode << ", terminating." << std::endl;
+        return EXIT_FAILURE;
     }
 }
