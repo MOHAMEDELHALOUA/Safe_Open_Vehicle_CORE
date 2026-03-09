@@ -22,13 +22,9 @@
 ---
 ##  2. <a name='Summary'></a>Summary
 
-This document describes the design of an ADAS Pipeline application
-built on Eclipse S-CORE middleware. The application implements
-Cruise Control and Automatic Emergency Braking (AEB) across 9
-processes organized in 6 layers, integrating the COM, FEO, LOG,
-PERSISTENCE and EXEC modules. The goal is to stress-test S-CORE
-under realistic automotive conditions and evaluate its readiness
-for deployment on embedded hardware such as the NXP S32N7 with QNX.
+This document describes the design of an ADAS Pipeline application built on Eclipse S-CORE middleware. The application implements Cruise Control and Automatic Emergency Braking (AEB) across 9 processes organized in 6 layers, integrating the COM, FEO, LOG, PERSISTENCE and EXEC modules.
+The goal is to stress-test S-CORE under realistic automotive conditions and evaluate its readiness for deployment on embedded hardware such as the NXP S32N7 with QNX.
+
 ---
 
 ##  3. <a name='Motivations'></a>Motivations
