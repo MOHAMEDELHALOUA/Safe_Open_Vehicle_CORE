@@ -1,18 +1,18 @@
 ##  1. <a name='Content'></a>Content
 
 <!-- vscode-markdown-toc -->
-* 1. [Content](#Content)
-* 2. [Summary](#Summary)
-* 3. [Motivations](#Motivations)
-* 4. [Description of the project](#Descriptionoftheproject)
-* 5. [Requirements](#Requirements)
-* 6. [The Full System](#TheFullSystem)
-* 7. [Preview of the project architecutre](#Previewoftheprojectarchitecutre)
-* 8. [Overview of the project's structure](#Overviewoftheprojectsstructure)
-* 9. [Layer diagram with modules](#Layerdiagramwithmodules)
-* 10. [Project File Structure](#ProjectFileStructure)
-* 11. [The Simulated Scenarios](#TheSimulatedScenarios)
-* 12. [Implementation Order — Step by Step](#ImplementationOrderStepbyStep)
+ 1. [Content](#Content)
+ 2. [Summary](#Summary)
+ 3. [Motivations](#Motivations)
+ 4. [Description of the project](#Descriptionoftheproject)
+ 5. [Requirements](#Requirements)
+ 6. [The Full System](#TheFullSystem)
+ 7. [Preview of the project architecutre](#Previewoftheprojectarchitecutre)
+ 8. [Overview of the project's structure](#Overviewoftheprojectsstructure)
+ 9. [Layer diagram with modules](#Layerdiagramwithmodules)
+ 10. [Project File Structure](#ProjectFileStructure)
+ 11. [The Simulated Scenarios](#TheSimulatedScenarios)
+ 12. [Implementation Order — Step by Step](#ImplementationOrderStepbyStep)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
